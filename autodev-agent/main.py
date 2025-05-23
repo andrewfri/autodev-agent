@@ -11,6 +11,8 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import List
 from datetime import datetime
+from fastapi.staticfiles import StaticFiles
+import os
 
 app = FastAPI(title="Meal Tracker API")
 
@@ -42,3 +44,7 @@ def list_meals():
         List of all meals in the tracker.
     """
     return meals_db
+
+# Serve static frontend at root
+static_dir = os.path.join(os.path.dirname(__file__), "static")
+app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")

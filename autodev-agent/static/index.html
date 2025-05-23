@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Meal Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: Arial, sans-serif; background: #f7f7f7; margin: 0; padding: 0; }
+    .container { max-width: 500px; margin: 40px auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px #0001; padding: 24px; }
+    h1 { text-align: center; color: #333; }
+    form { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
+    input, button { padding: 10px; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc; }
+    button { background: #007bff; color: #fff; border: none; cursor: pointer; }
+    button:hover { background: #0056b3; }
+    .meal-list { margin-top: 24px; }
+    .meal { background: #f1f1f1; margin-bottom: 10px; padding: 10px; border-radius: 4px; }
+    .meal span { display: block; }
+    .error { color: red; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Meal Tracker</h1>
+    <form id="meal-form">
+      <input type="text" id="name" placeholder="Meal Name" required>
+      <input type="number" id="calories" placeholder="Calories" required>
+      <input type="datetime-local" id="timestamp" required>
+      <button type="submit">Add Meal</button>
+    </form>
+    <div class="error" id="error"></div>
+    <div class="meal-list" id="meal-list"></div>
+  </div>
+  <script>
+    const apiBase = "/meals";
+    const mealForm = document.getElementById('meal-form');
+    const mealList = document.getElementById('meal-list');
+    const errorDiv = document.getElementById('error');
+
+    async function fetchMeals() {
+      mealList.innerHTML = "Loading...";
+      try {
+        const res = await fetch(apiBase);
+        const meals = await res.json();
+        if (meals.length === 0) {
+          mealList.innerHTML = "<em>No meals yet.</em>";
+          return;
+        }
+        mealList.innerHTML = meals.map(meal => `
+          <div class="meal">
+            <span><strong>${meal.name}</strong></span>
+            <span>Calories: ${meal.calories}</span>
+            <span>Time: ${new Date(meal.timestamp).toLocaleString()}</span>
+          </div>
+        `).join('');
+      } catch (err) {
+        mealList.innerHTML = "<span class='error'>Failed to load meals.</span>";
+      }
+    }
+
+    mealForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorDiv.textContent = "";
+      const name = document.getElementById('name').value.trim();
+      const calories = parseInt(document.getElementById('calories').value, 10);
+      const timestamp = document.getElementById('timestamp').value;
+      if (!name || !calories || !timestamp) {
+        errorDiv.textContent = "Please fill out all fields.";
+        return;
+      }
+      try {
+        const res = await fetch(apiBase, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, calories, timestamp })
+        });
+        if (!res.ok) throw new Error("Failed to add meal");
+        mealForm.reset();
+        fetchMeals();
+      } catch (err) {
+        errorDiv.textContent = "Failed to add meal.";
+      }
+    });
+
+    fetchMeals();
+  </script>
+</body>
+</html>
